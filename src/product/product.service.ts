@@ -21,20 +21,39 @@ export class ProductService {
   }
 
   async findAll(filters: any) {
-    const query: any = {};
-    if (filters.name) query.name = { $regex: filters.name, $options: 'i' };
-    if (filters.stock) query.stock = { $gte: Number(filters.stock) };
-    if (filters.createdAt) {
-      query.createdAt = {
-        $gte: new Date(filters.createdAt),
-        $lte: new Date(filters.createdAt + 'T23:59:59'),
-      };
-    }
-    return this.productModel.find(query);
+  const query: any = {};
+  //  Filter by name 
+  if (filters.name) {
+    query.name = { $regex: filters.name, $options: 'i' };
   }
 
+  // Filter by stock 
+  if (filters.stock) {
+    const stockValue = Number(filters.stock);
+    if (!isNaN(stockValue)) {
+      query.stock = { $gte: stockValue };
+    }
+  }
+
+  // Filter by created date (entire day range)
+  if (filters.createdAt) {
+    const date = new Date(filters.createdAt);
+    const nextDay = new Date(date);
+    nextDay.setDate(date.getDate() + 1);
+
+    query.createdAt = {
+      $gte: date,
+      $lt: nextDay,
+    };
+  }
+
+  return this.productModel.find(query);
+}
+
+
   async findOne(id: string) {
-    const product = await this.productModel.findById(id);
+    const trimmedId = id.trim(); 
+    const product = await this.productModel.findById(trimmedId);
     if (!product) throw new NotFoundException('Product not found');
     return product;
   }
