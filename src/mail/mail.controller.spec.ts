@@ -29,12 +29,55 @@ describe('MailController', () => {
     expect(controller).toBeDefined();
   });
 
-  it('should call mailService.sendEmail and return response', async () => {
-    const body = { to: 'test@example.com', subject: 'Hi', text: 'Hello' };
+  it('should call mailService.sendEmail with body and file paths', async () => {
+    const body = {
+      to: 'test@example.com',
+      subject: 'Hi',
+      text: 'Hello',
+      htmlTemplate: 'test.html',
+    };
+
+    // simulate no uploaded files
+    const files: { attachments?: Express.Multer.File[] } = { attachments: [] };
+
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const result = await controller.sendMail(body);
+    const result = await controller.sendMail(body, files);
+
     // eslint-disable-next-line @typescript-eslint/unbound-method
-    expect(service.sendEmail).toHaveBeenCalledWith(body);
+    expect(service.sendEmail).toHaveBeenCalledWith({
+      to: body.to,
+      subject: body.subject,
+      text: body.text,
+      htmlTemplate: body.htmlTemplate,
+      attachmentPaths: [], // from empty files.attachments
+    });
     expect(result).toEqual({ message: 'Email sent' });
+  });
+
+  it('should include file paths when attachments present', async () => {
+    const body = {
+      to: 'file@example.com',
+      subject: 'File Test',
+      text: 'See attachments',
+    };
+
+    // simulate two uploaded files
+    const files: { attachments?: Express.Multer.File[] } = {
+      attachments: [
+        { path: 'uploads/mail/a.jpg' } as any,
+        { path: 'uploads/mail/b.pdf' } as any,
+      ],
+    };
+
+    await controller.sendMail(body, files);
+
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(service.sendEmail).toHaveBeenCalledWith({
+      to: body.to,
+      subject: body.subject,
+      text: body.text,
+      htmlTemplate: undefined,
+      attachmentPaths: ['uploads/mail/a.jpg', 'uploads/mail/b.pdf'],
+    });
   });
 });

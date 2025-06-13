@@ -1,5 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Injectable } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import * as path from 'path';
@@ -9,13 +10,13 @@ interface SendEmailOptions {
   to: string;
   subject: string;
   text?: string;
-  htmlTemplate?: string;
-  attachmentPath?: string;
+  htmlTemplate?: string; // Relative path to template in /templates
+  attachmentPaths?: string[];
 }
 
 @Injectable()
 export class MailService {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
   private transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -29,46 +30,43 @@ export class MailService {
 
   // eslint-disable-next-line @typescript-eslint/require-await
   async sendEmail(options: SendEmailOptions) {
-    const { to, subject, text, htmlTemplate, attachmentPath } = options;
+    const { to, subject, text, htmlTemplate, attachmentPaths } = options;
 
-    let htmlContent = '';
-
+    // Load HTML template content if provided
+    let htmlContent: string | undefined;
     if (htmlTemplate) {
-      const filePath = path.join(
+      const templatePath = path.join(
         process.cwd(),
         'src',
         'mail',
         'templates',
         htmlTemplate,
       );
-      if (fs.existsSync(filePath)) {
-        htmlContent = fs.readFileSync(filePath, 'utf8');
-      } else {
-        throw new Error(`Template file not found: ${filePath}`);
+      if (!fs.existsSync(templatePath)) {
+        throw new Error(`Template not found: ${templatePath}`);
       }
+      htmlContent = fs.readFileSync(templatePath, 'utf8');
     }
 
-    const attachments: nodemailer.Attachment[] = [];
-
-    if (attachmentPath) {
-      const fullPath = path.join(process.cwd(), attachmentPath);
-      if (fs.existsSync(fullPath)) {
-        attachments.push({
-          filename: path.basename(fullPath),
-          path: fullPath,
-        });
-      } else {
-        throw new Error(`Attachment file not found: ${fullPath}`);
+    // Prepare attachments
+    const attachments = (attachmentPaths || []).map((relativePath) => {
+      const fullPath = path.join(process.cwd(), relativePath);
+      if (!fs.existsSync(fullPath)) {
+        throw new Error(`Attachment not found: ${fullPath}`);
       }
-    }
+      return {
+        filename: path.basename(fullPath),
+        path: fullPath,
+      };
+    });
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    // Send email
     return this.transporter.sendMail({
       from: `"Nest Mailer" <${process.env.MAIL_USER}>`,
       to,
       subject,
       text,
-      html: htmlContent || undefined,
+      html: htmlContent,
       attachments,
     });
   }
