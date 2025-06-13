@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -8,11 +10,12 @@ import { UpdateProductDto } from './dto/update-product.dto';
 @Injectable()
 export class ProductService {
   constructor(
-    @InjectModel(Product.name) private readonly productModel: Model<ProductDocument>,
+    @InjectModel(Product.name)
+    private readonly productModel: Model<ProductDocument>,
   ) {}
 
   async create(createDto: CreateProductDto, imageFiles: Express.Multer.File[]) {
-    const imagePaths = imageFiles.map(file => file.filename);
+    const imagePaths = imageFiles.map((file) => file.filename);
     const newProduct = new this.productModel({
       ...createDto,
       images: imagePaths,
@@ -29,19 +32,16 @@ export class ProductService {
   }) {
     const query: any = {};
 
-   
     if (filters.name) {
       query.name = { $regex: filters.name, $options: 'i' };
     }
 
- 
     if (filters.stock) {
       const stockValue = Number(filters.stock);
       if (!isNaN(stockValue)) {
         query.stock = { $gte: stockValue };
       }
     }
-
 
     if (filters.createdAt) {
       const date = new Date(filters.createdAt);
@@ -53,12 +53,10 @@ export class ProductService {
       };
     }
 
- 
     const page = Math.max(parseInt(filters.page || '1'), 1);
     const limit = Math.max(parseInt(filters.limit || '10'), 1);
     const skip = (page - 1) * limit;
 
- 
     const [data, total] = await Promise.all([
       this.productModel.find(query).skip(skip).limit(limit),
       this.productModel.countDocuments(query),
@@ -83,7 +81,9 @@ export class ProductService {
   }
 
   async update(id: string, updateDto: UpdateProductDto) {
-    return this.productModel.findByIdAndUpdate(id.trim(), updateDto, { new: true });
+    return this.productModel.findByIdAndUpdate(id.trim(), updateDto, {
+      new: true,
+    });
   }
 
   async remove(id: string) {

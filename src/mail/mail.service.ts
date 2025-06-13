@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { Injectable } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import * as path from 'path';
@@ -13,6 +15,7 @@ interface SendEmailOptions {
 
 @Injectable()
 export class MailService {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
   private transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -24,13 +27,20 @@ export class MailService {
     },
   });
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   async sendEmail(options: SendEmailOptions) {
     const { to, subject, text, htmlTemplate, attachmentPath } = options;
 
     let htmlContent = '';
 
     if (htmlTemplate) {
-      const filePath = path.join(process.cwd(), 'src', 'mail', 'templates', htmlTemplate);
+      const filePath = path.join(
+        process.cwd(),
+        'src',
+        'mail',
+        'templates',
+        htmlTemplate,
+      );
       if (fs.existsSync(filePath)) {
         htmlContent = fs.readFileSync(filePath, 'utf8');
       } else {
@@ -52,6 +62,7 @@ export class MailService {
       }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     return this.transporter.sendMail({
       from: `"Nest Mailer" <${process.env.MAIL_USER}>`,
       to,

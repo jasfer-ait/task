@@ -1,3 +1,5 @@
+/* eslint-disable prettier/prettier */
+/* eslint-disable @typescript-eslint/no-floating-promises */
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
@@ -7,10 +9,10 @@ import { join } from 'path';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // Enable validation globally
+  
   app.useGlobalPipes(new ValidationPipe());
 
-  // Serve static files (for image access)
+
   app.useStaticAssets(join(__dirname, '..', 'uploads'));
 
   const port = process.env.PORT ?? 3000;
